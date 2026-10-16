@@ -11,7 +11,8 @@ const PendingPayment = require('../models/PendingPayment');
 const PaymentLog = require('../models/PaymentLog');
 const crypto = require('crypto');
 const Razorpay = require('razorpay');
-
+const { encryptString, decryptString } = require('../utils/encryption');
+const { encryptObject, decryptObject } = require('../utils/encryption');
 const razorpay = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder',
     key_secret: process.env.RAZORPAY_KEY_SECRET || 'rzp_test_placeholder'
@@ -280,7 +281,8 @@ router.post('/book', upload.single('healthCard'), validateRequest({ body: appoin
         await PendingPayment.create({
             orderId: pendingOrderId,
             paymentType: 'appointment',
-            data: pendingData
+            data:
+            encryptString(JSON.stringify(pendingData))
         });
 
         const order = await razorpay.orders.create({
@@ -340,7 +342,24 @@ router.post('/verify-payment', validateRequest({ body: paymentVerifySchema }), a
             return res.status(404).json({ success: false, message: 'Pending appointment order not found' });
         }
 
-        const pendingData = pendingRecord.data;
+     let pendingData;
+     try{
+        pendingData = typeof pendingRecord.data === 'string' ? JSON.parse(pendingRecord.data) : pendingRecord.data;
+
+        if(
+            !pendingData || typeof pendingData !== 'object' || Array.isArray(pendingData)
+        ) {
+            throw new Error('Invalid pending appointment data');
+        }
+        
+     } catch (error) {
+        console.error('pending appointment data decryption failed:', error. message);
+
+        return res.status(500).json({
+            success:false,
+            message: 'Unable to process appointment data securely.'
+        });
+     }
 
         const newAppointment = new Appointment({
             name: pendingData.name,

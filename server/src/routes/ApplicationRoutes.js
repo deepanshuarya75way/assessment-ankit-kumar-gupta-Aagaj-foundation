@@ -8,11 +8,15 @@ const PDFDocument = require('pdfkit');
 const Razorpay = require('razorpay');
 const { Applicant, NormalApplicant } = require('../models/ApplicationSchema');
 const PendingPayment = require('../models/PendingPayment');
+
+const { encryptString, decryptString } = require('../utils/encryption');
+
 const PaymentLog = require('../models/PaymentLog');
 const crypto = require('crypto');
 const { sendApplicationConfirmation } = require('../services/emailService');
 const { validateRequest } = require('../middleware/requestValidation');
 const { jobApplicationCreateOrderSchema, paymentVerifySchema } = require('../utils/routeSchemas');
+
 
 const razorpay = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder',
@@ -552,7 +556,8 @@ router.post('/create-order', handlePhotoUpload, validateRequest({ body: jobAppli
             await PendingPayment.create({
                 orderId: orderId,
                 paymentType: 'application',
-                data: appData
+                data: 
+                encryptString(JSON.stringify(appData))
             });
             console.log("✅ Applicant stored in MongoDB pending collection");
         } catch (storeError) {
@@ -621,9 +626,26 @@ router.post('/verify-payment', validateRequest({ body: paymentVerifySchema }), a
             return res.status(404).json({ success: false, message: 'Pending application not found' });
         }
 
+        let pendingAppData;
+
+        try {
+            pendingAppData = typeof pendingRecord.data === 'string' ? JSON.parse(decryptString(pendingRecord.data))
+            : pendingRecord.data; 
+        } catch (decryptError) {
+            console.error(
+                'Application data decryption failed:' ,
+                decryptError.message
+            );
+
+            return res.status(500).json({
+                success:false,
+                message: 'unable to process application data securely.'
+            });
+        }
+
         const appData = {
-            ...pendingRecord.data,
-            status: 'Success',
+            ...pendingAppData,
+            status: 'success',
             paymentId: razorpay_payment_id,
             applicationPdf: ''
         };

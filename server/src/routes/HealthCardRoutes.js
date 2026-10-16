@@ -24,7 +24,7 @@ const razorpay = new Razorpay({
     key_secret: process.env.RAZORPAY_KEY_SECRET || 'rzp_test_placeholder'
 });
 
-// ✅ FILE FILTER - Only Images
+//  FILE FILTER - Only Images
 const fileFilter = (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -41,7 +41,7 @@ const upload = require('../middleware/upload');
 
 const { verifyAdmin, verifyAdminOrEmployee } = require('../middleware/auth');
 
-// ✅ API to Check if User Already Exists
+//  API to Check if User Already Exists
 router.post('/check-exists', validateRequest({ body: healthCardCheckExistsSchema }), async (req, res) => {
     try {
         const { mobile, aadhar } = req.body;
