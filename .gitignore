@@ -1,11 +1,13 @@
 # Dependency directories
 **/node_modules/
 
-# Local env files
+# Local env files — NEVER commit real credentials
 **/.env
-**/.env.local
-**/.env.*.local
+**/.env.*
 !**/.env.example
+# Numbered env files (e.g. .env-1, .env-2) — these should never be committed
+.env-*
+**/.env-*
 
 # Logs
 **/logs
@@ -27,3 +29,6 @@ Thumbs.db
 server/uploads/
 dist/
 dist-ssr/
+
+# Secret scanning
+.gitleaks.toml

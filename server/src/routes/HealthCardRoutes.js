@@ -337,7 +337,8 @@ router.get('/get-by-order/:orderId', async (req, res) => {
 
 // Helper function to hash OTP securely
 const hashOtp = (otp) => {
-    const secret = process.env.JWT_SECRET || 'aagaz_healthcard_secret_key';
+    const { getJwtSecret } = require('../middleware/auth');
+    const secret = getJwtSecret();
     return crypto.createHmac('sha256', secret).update(String(otp).trim()).digest('hex');
 };
 
@@ -354,7 +355,8 @@ const verifyCardAccessToken = (req, res, next) => {
     const tokenVal = authHeader.replace("Bearer ", "").trim();
 
     try {
-        const decoded = jwt.verify(tokenVal, process.env.JWT_SECRET || 'aagaz_healthcard_secret_key');
+        const { getJwtSecret } = require('../middleware/auth');
+        const decoded = jwt.verify(tokenVal, getJwtSecret());
         if (decoded.role === 'admin' || decoded.role === 'employee') {
             return next();
         }
@@ -548,7 +550,7 @@ router.post('/verify-otp', async (req, res) => {
 
         const cardToken = jwt.sign(
             { healthId: otpSession.healthId, scope: 'healthcard_access' },
-            process.env.JWT_SECRET || 'aagaz_healthcard_secret_key',
+            require('../middleware/auth').getJwtSecret(),
             { expiresIn: '15m' }
         );
 

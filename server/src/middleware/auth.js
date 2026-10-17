@@ -1,6 +1,17 @@
 const jwt = require('jsonwebtoken');
 
-const getJwtSecret = () => process.env.JWT_SECRET || 'aagaz_healthcard_secret_key';
+const getJwtSecret = () => {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+        if (process.env.NODE_ENV === 'production') {
+            console.error('FATAL: JWT_SECRET environment variable is not set. Server cannot start securely.');
+            process.exit(1);
+        }
+        console.warn('[SECURITY WARNING] JWT_SECRET is not set. Using insecure default — set JWT_SECRET in your .env file.');
+        return 'INSECURE_DEV_ONLY_CHANGE_ME';
+    }
+    return secret;
+};
 
 /**
  * Centralized Authentication Middleware

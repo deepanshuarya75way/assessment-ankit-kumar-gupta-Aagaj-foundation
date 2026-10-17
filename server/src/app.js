@@ -18,7 +18,43 @@ const PaymentLog = require('./models/PaymentLog');
 const { createAuditTrailMiddleware } = require('./middleware/auditTrail');
 
 
+// ============================================
+// ✅ STARTUP ENVIRONMENT VALIDATION
+// ============================================
+const REQUIRED_ENV_VARS = [
+    'MONGO_URI',
+    'JWT_SECRET',
+    'RAZORPAY_KEY_ID',
+    'RAZORPAY_KEY_SECRET',
+    'CLOUDINARY_CLOUD_NAME',
+    'CLOUDINARY_API_KEY',
+    'CLOUDINARY_API_SECRET',
+];
+
+const REQUIRED_IN_PRODUCTION = [
+    'EMAIL_USER',
+    'EMAIL_PASS',
+];
+
+const missingVars = REQUIRED_ENV_VARS.filter(v => !process.env[v]);
+const missingProdVars = (process.env.NODE_ENV === 'production')
+    ? REQUIRED_IN_PRODUCTION.filter(v => !process.env[v])
+    : [];
+
+if (missingVars.length > 0 || missingProdVars.length > 0) {
+    const allMissing = [...missingVars, ...missingProdVars];
+    const isFatal = process.env.NODE_ENV === 'production' || missingVars.length > 0;
+    const msg = `[ENV] Missing required environment variable(s): ${allMissing.join(', ')}. Check your .env file.`;
+    if (isFatal) {
+        console.error(`FATAL: ${msg}`);
+        process.exit(1);
+    } else {
+        console.warn(`[SECURITY WARNING] ${msg}`);
+    }
+}
+
 const PORT = process.env.PORT || 5000;
+
 
 const app = express();
 app.disable('x-powered-by');
@@ -777,9 +813,10 @@ app.post('/api/employee/login', authLimiter, async (req, res) => {
         const isMatch = await bcrypt.compare(password, passwordToCompare);
 
         if (isMatch) {
+            const { getJwtSecret } = require('./middleware/auth');
             const token = jwt.sign(
                 { id: user._id, email: user.email || user.emp_username, role: 'employee', designation: user.designation },
-                process.env.JWT_SECRET || 'aagaz_healthcard_secret_key',
+                getJwtSecret(),
                 { expiresIn: '24h' }
             );
 
