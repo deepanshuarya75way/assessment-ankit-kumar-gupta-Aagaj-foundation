@@ -122,7 +122,7 @@ const verifyOtpSession = async ({ sessionId, scope, otp }) => {
 
     const accessToken = jwt.sign(
         tokenPayload,
-        process.env.JWT_SECRET || 'aagaz_generic_otp_secret',
+        require('../middleware/auth').getJwtSecret(),
         { expiresIn: '15m' }
     );
 

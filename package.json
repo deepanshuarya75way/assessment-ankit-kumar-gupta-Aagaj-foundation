@@ -1,0 +1,13 @@
+{
+  "name": "aagaj-foundation",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Aagaj Foundation monorepo root — development tooling",
+  "scripts": {
+    "scan:secrets": "npx gitleaks@latest detect --source . --config .gitleaks.toml -v --no-git 2>&1 || echo 'Run: npx gitleaks detect --source . -v for full git history scan'",
+    "scan:secrets:history": "npx gitleaks@latest detect --source . --config .gitleaks.toml -v",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev"
+  },
+  "devDependencies": {}
+}
